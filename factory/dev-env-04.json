@@ -1,0 +1,15 @@
+{
+	"name": "dev-env-04",
+	"properties": {
+		"trustModeClaimForMi": {
+			"value": "Disabled",
+			"editable": true
+		}
+	},
+	"location": "centralindia",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "9ba3ea0e-d108-475c-ae8c-dfb11f654cf1",
+		"tenantId": "0514fd82-4f8a-4199-9f5c-7cf13a6adf1d"
+	}
+}
