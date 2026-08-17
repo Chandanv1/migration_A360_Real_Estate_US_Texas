@@ -1,0 +1,23 @@
+{
+	"name": "ds_sqlServer_OnPrem",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_onprem_sql",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"SourceServer": {
+				"type": "string"
+			},
+			"SourceDataBaseName": {
+				"type": "string"
+			},
+			"SourceUserName": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "SqlServerTable",
+		"schema": []
+	}
+}
