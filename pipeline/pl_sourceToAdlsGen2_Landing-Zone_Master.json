@@ -17,7 +17,10 @@
 				"typeProperties": {
 					"source": {
 						"type": "AzureSqlSource",
-						"sqlReaderQuery": "\tSELECT \r\n\t    SourceSchemaName,\r\n\t    SourceTableName,\r\n\t    ISNULL(SourceQuery,'') +\r\n\t    '''' +\r\n\t    ISNULL(\r\n\t        CASE \r\n\t            WHEN WatermarkDataType = 'DATETIME'\r\n\t                THEN ISNULL(NULLIF(LastWatermarkValue,'NULL'),'01/01/1900')\r\n\t            WHEN WatermarkDataType = 'INT'\r\n\t                THEN ISNULL(NULLIF(LastWatermarkValue,'NULL'),\r\n\t                      '0')\r\n\t            ELSE ISNULL(NULLIF(LastWatermarkValue,'NULL'),'')\r\n\t        END,''\r\n\t    )\r\n\t    + '''' AS SourceQuery,\r\n\t    SourceName,\r\n\t    SourceServer,\r\n\t    SourceDatabaseName,\r\n\t    SourceDBUserName\r\n\tFROM IncrementalLoadMetadata\r\n\tWHERE IsActive = 1;\r\n",
+						"sqlReaderQuery": {
+							"value": "\tSELECT \n\t    SourceSchemaName,\n\t    SourceTableName,\n\t    ISNULL(SourceQuery,'') +\n\t    '''' +\n\t    ISNULL(\n\t        CASE \n\t            WHEN WatermarkDataType = 'DATETIME'\n\t                THEN ISNULL(NULLIF(LastWatermarkValue,'NULL'),'01/01/1900')\n\t            WHEN WatermarkDataType = 'INT'\n\t                THEN ISNULL(NULLIF(LastWatermarkValue,'NULL'),\n\t                      '0')\n\t            ELSE ISNULL(NULLIF(LastWatermarkValue,'NULL'),'')\n\t        END,''\n\t    )\n\t    + '''' AS SourceQuery,\n\t    SourceName,\n\t    SourceServer,\n\t    SourceDatabaseName,\n\t    SourceDBUserName\n\tFROM IncrementalLoadMetadata\n\tWHERE IsActive = 1;\n",
+							"type": "Expression"
+						},
 						"queryTimeout": "02:00:00",
 						"partitionOption": "None"
 					},
@@ -62,7 +65,7 @@
 								"source": {
 									"type": "SqlServerSource",
 									"sqlReaderQuery": {
-										"value": "@item().SourceQuery",
+										"value": "@item().SourceQuery\n",
 										"type": "Expression"
 									},
 									"queryTimeout": "02:00:00",
