@@ -1,0 +1,285 @@
+{
+	"name": "pl_sourceToAdlsGen2_Landing-Zone_Master",
+	"properties": {
+		"activities": [
+			{
+				"name": "GetMetaData",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "\tSELECT \n\t    SourceSchemaName,\n\t    SourceTableName,\n\t    ISNULL(SourceQuery,'') +\n\t    '''' +\n\t    ISNULL(\n\t        CASE \n\t            WHEN WatermarkDataType = 'DATETIME'\n\t                THEN ISNULL(NULLIF(LastWatermarkValue,'NULL'),'01/01/1900')\n\t            WHEN WatermarkDataType = 'INT'\n\t                THEN ISNULL(NULLIF(LastWatermarkValue,'NULL'),\n\t                      '0')\n\t            ELSE ISNULL(NULLIF(LastWatermarkValue,'NULL'),'')\n\t        END,''\n\t    )\n\t    + '''' AS SourceQuery,\n\t    SourceName,\n\t    SourceServer,\n\t    SourceDatabaseName,\n\t    SourceDBUserName\n\tFROM IncrementalLoadMetadata\n\tWHERE IsActive = 1;\n",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "ds_IncrementalMetadta_AzureSql",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "ForEach1",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "GetMetaData",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('GetMetaData').output.value",
+						"type": "Expression"
+					},
+					"activities": [
+						{
+							"name": "Copy data1",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "SqlServerSource",
+									"sqlReaderQuery": {
+										"value": "@item().SourceQuery\n",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "DelimitedTextSink",
+									"storeSettings": {
+										"type": "AzureBlobFSWriteSettings"
+									},
+									"formatSettings": {
+										"type": "DelimitedTextWriteSettings",
+										"quoteAllText": true,
+										"fileExtension": ".txt"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "ds_sqlServer_OnPrem",
+									"type": "DatasetReference",
+									"parameters": {
+										"SourceServer": {
+											"value": "@item().SourceServer",
+											"type": "Expression"
+										},
+										"SourceDataBaseName": {
+											"value": "@item().SourceDatabaseName",
+											"type": "Expression"
+										},
+										"SourceUserName": {
+											"value": "@item().SourceDBUserName",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "ds_Tables_A360",
+									"type": "DatasetReference",
+									"parameters": {
+										"Directory": {
+											"value": "@concat('staging/',item().SourceName,'/csvFiles/')",
+											"type": "Expression"
+										},
+										"FileName": {
+											"value": "@concat(item().SourceTableName,'.csv')",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						}
+					]
+				}
+			},
+			{
+				"name": "GetMaxDate",
+				"type": "Lookup",
+				"dependsOn": [
+					{
+						"activity": "ForEach1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlServerSource",
+						"sqlReaderQuery": "SELECT\r\n    (SELECT MAX(AgentKey) \r\n     FROM dbo.DimAgent) AS MaxAgentKey,\r\n\r\n    (SELECT MAX(CustomerKey) \r\n     FROM dbo.DimCustomer) AS MaxCustomerKey,\r\n\r\n    (SELECT MAX(PropertyKey) \r\n     FROM dbo.DimProperty) AS MaxPropertyKey,\r\n\r\n    (SELECT MAX(SalesKey) \r\n     FROM dbo.FactPropertySales) AS MaxSalesKey;",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "ds_sqlServer_OnPrem",
+						"type": "DatasetReference",
+						"parameters": {
+							"SourceServer": "DESKTOP-P24AOKF\\SQLEXPRESS01",
+							"SourceDataBaseName": "A360_Real_Estate_US_Texas",
+							"SourceUserName": "ChandanS"
+						}
+					},
+					"firstRowOnly": true
+				}
+			},
+			{
+				"name": "Notebook1",
+				"type": "SynapseNotebook",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
+				"dependsOn": [
+					{
+						"activity": "GetMaxDate",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"snapshot": true,
+					"conf": {
+						"spark.dynamicAllocation.enabled": null,
+						"spark.dynamicAllocation.minExecutors": null,
+						"spark.dynamicAllocation.maxExecutors": null
+					},
+					"numExecutors": null
+				}
+			},
+			{
+				"name": "ConvertingToParquet",
+				"type": "Copy",
+				"state": "Inactive",
+				"onInactiveMarkAs": "Succeeded",
+				"dependsOn": [
+					{
+						"activity": "GetMaxDate",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlServerSource",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_sqlServer_OnPrem",
+						"type": "DatasetReference"
+					}
+				]
+			},
+			{
+				"name": "Script1",
+				"type": "Script",
+				"dependsOn": [
+					{
+						"activity": "ConvertingToParquet",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Notebook1",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"linkedServiceName": {
+					"referenceName": "ls_AzureSql",
+					"type": "LinkedServiceReference"
+				},
+				"typeProperties": {
+					"scripts": [
+						{
+							"type": "Query",
+							"text": {
+								"value": "UPDATE dbo.IncrementalLoadMetadata\nSET LastWatermarkValue = @{activity('GetMaxDate').output.firstRow.MaxCustomerKey}\nWHERE SourceName = 'OnPremSQLServer'\n  AND SourceTableName = 'DimCustomer';\n\nUPDATE dbo.IncrementalLoadMetadata\nSET LastWatermarkValue = @{activity('GetMaxDate').output.firstRow.MaxAgentKey}\nWHERE SourceName = 'OnPremSQLServer'\n  AND SourceTableName = 'DimAgent';\n\n  UPDATE dbo.IncrementalLoadMetadata\nSET LastWatermarkValue = @{activity('GetMaxDate').output.firstRow.MaxPropertyKey}\nWHERE SourceName = 'OnPremSQLServer'\n  AND SourceTableName = 'DimProperty';\n\n  UPDATE dbo.IncrementalLoadMetadata\nSET LastWatermarkValue = @{activity('GetMaxDate').output.firstRow.MaxSalesKey}\nWHERE SourceName = 'OnPremSQLServer'\n  AND SourceTableName = 'FactPropertySales';",
+								"type": "Expression"
+							}
+						}
+					],
+					"scriptBlockExecutionTimeout": "02:00:00"
+				}
+			}
+		],
+		"annotations": []
+	}
+}

@@ -1,0 +1,17 @@
+{
+	"name": "ls_onprem_sql",
+	"type": "Microsoft.DataFactory/factories/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "SqlServer",
+		"typeProperties": {
+			"connectionString": "integrated security=True;data source=DESKTOP-P24AOKF\\SQLEXPRESS01;initial catalog=A360_Real_Estate_US_Texas",
+			"userName": "DESKTOP-P24AOKF\\ChandanS",
+			"encryptedCredential": "eyJDcmVkZW50aWFsSWQiOiI4YzA2YWVjMi1kZTdkLTQ0MzgtOGMxYi05ZGJjZjUyYTFmMjQiLCJWZXJzaW9uIjoiMi4wIiwiQ2xhc3NUeXBlIjoiTWljcm9zb2Z0LkRhdGFQcm94eS5Db3JlLkludGVyU2VydmljZURhdGFDb250cmFjdC5DcmVkZW50aWFsU1UwNkNZMTQifQ=="
+		},
+		"connectVia": {
+			"referenceName": "integrationRuntime1",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}
