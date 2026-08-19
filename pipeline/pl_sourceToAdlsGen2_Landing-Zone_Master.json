@@ -295,6 +295,10 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_LandingToStaging_Child",
+						"type": "PipelineReference"
+					},
 					"waitOnCompletion": true
 				}
 			},
@@ -314,6 +318,10 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
+					"pipeline": {
+						"referenceName": "pl_StagingToGold_Child",
+						"type": "PipelineReference"
+					},
 					"waitOnCompletion": true
 				}
 			}
