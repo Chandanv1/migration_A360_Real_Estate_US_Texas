@@ -220,8 +220,19 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
+					"source": {
+						"type": "SqlServerSource",
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
 					"enableStaging": false
-				}
+				},
+				"inputs": [
+					{
+						"referenceName": "ds_sqlServer_OnPrem",
+						"type": "DatasetReference"
+					}
+				]
 			},
 			{
 				"name": "Script1",
@@ -257,7 +268,7 @@
 						{
 							"type": "Query",
 							"text": {
-								"value": "UPDATE dbo.IncrementalLoadMetadata\nSET LastWatermarkValue = @{activity('GetMaxDate').output.firstRow.MaxCustomerKey}\nWHERE SourceName = 'OnPremSQLServer'\n  AND SourceTable = 'DimCustomer';\n",
+								"value": "UPDATE dbo.IncrementalLoadMetadata\nSET LastWatermarkValue = @{activity('GetMaxDate').output.firstRow.MaxCustomerKey}\nWHERE SourceName = 'OnPremSQLServer'\n  AND SourceTableName = 'DimCustomer';\n\nUPDATE dbo.IncrementalLoadMetadata\nSET LastWatermarkValue = @{activity('GetMaxDate').output.firstRow.MaxAgentKey}\nWHERE SourceName = 'OnPremSQLServer'\n  AND SourceTableName = 'DimAgent';\n\n  UPDATE dbo.IncrementalLoadMetadata\nSET LastWatermarkValue = @{activity('GetMaxDate').output.firstRow.MaxPropertyKey}\nWHERE SourceName = 'OnPremSQLServer'\n  AND SourceTableName = 'DimProperty';\n\n  UPDATE dbo.IncrementalLoadMetadata\nSET LastWatermarkValue = @{activity('GetMaxDate').output.firstRow.MaxSalesKey}\nWHERE SourceName = 'OnPremSQLServer'\n  AND SourceTableName = 'FactPropertySales';",
 								"type": "Expression"
 							}
 						}
