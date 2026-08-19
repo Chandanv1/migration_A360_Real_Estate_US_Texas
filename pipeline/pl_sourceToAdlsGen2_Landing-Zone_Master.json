@@ -61,7 +61,10 @@
 							"typeProperties": {
 								"source": {
 									"type": "SqlServerSource",
-									"sqlReaderQuery": "@item().SourceQuery",
+									"sqlReaderQuery": {
+										"value": "@item().SourceQuery",
+										"type": "Expression"
+									},
 									"queryTimeout": "02:00:00",
 									"partitionOption": "None"
 								},
@@ -161,7 +164,7 @@
 							"SourceUserName": "ChandanS"
 						}
 					},
-					"firstRowOnly": false
+					"firstRowOnly": true
 				}
 			},
 			{
@@ -186,7 +189,13 @@
 				},
 				"userProperties": [],
 				"typeProperties": {
-					"snapshot": true
+					"snapshot": true,
+					"conf": {
+						"spark.dynamicAllocation.enabled": null,
+						"spark.dynamicAllocation.minExecutors": null,
+						"spark.dynamicAllocation.maxExecutors": null
+					},
+					"numExecutors": null
 				}
 			},
 			{
@@ -217,11 +226,15 @@
 			{
 				"name": "Script1",
 				"type": "Script",
-				"state": "Inactive",
-				"onInactiveMarkAs": "Succeeded",
 				"dependsOn": [
 					{
 						"activity": "ConvertingToParquet",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Notebook1",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -235,8 +248,20 @@
 					"secureInput": false
 				},
 				"userProperties": [],
+				"linkedServiceName": {
+					"referenceName": "ls_AzureSql",
+					"type": "LinkedServiceReference"
+				},
 				"typeProperties": {
-					"scripts": [],
+					"scripts": [
+						{
+							"type": "Query",
+							"text": {
+								"value": "UPDATE dbo.IncrementalLoadMetadata\nSET LastWatermarkValue = @{activity('GetMaxDate').output.firstRow.MaxCustomerKey}\nWHERE SourceName = 'OnPremSQLServer'\n  AND SourceTable = 'DimCustomer';\n",
+								"type": "Expression"
+							}
+						}
+					],
 					"scriptBlockExecutionTimeout": "02:00:00"
 				}
 			}
